@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Public Animals APIs </title>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lodash -->
+  <script src="https://cdn.jsdelivr.net/npm/lodash"></script>
+  <!-- Day.js -->
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+  
+
+  <style>
+    body {
+      background: #f3f6fa;
+      font-family: 'Sarabun', Arial, sans-serif;
+      color: #232323;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 95%;
+      max-width: 900px;
+      margin: 2rem auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: #165baa;
+    }
+    button {
+      background-color: #165baa;
+      color: #fff;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      padding: 0.7rem 1.5rem;
+      cursor: pointer;
+      transition: background 0.3s;
+      margin: 0 0 2rem 0;
+      display: inline-block;
+    }
+    button:hover {
+      background: #0e355e;
+    }
+    table {
+      width: 100%;
+      margin-top: 1.2rem;
+      border-collapse: collapse;
+      background: #f9fbfd;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.7rem;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 1rem;
+    }
+    th {
+      background: #e9f1fc;
+    }
+    tr:hover td { background: #e6f7fe; }
+    #chart-container {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #f9fbfd;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    #image-container {
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+    }
+    .api-image-card {
+      width: 120px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    .api-image-card img {
+      width: 100%;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .api-image-card img:hover {
+      transform: scale(1.05);
+      border-color: #165baa;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1rem; }
+      th, td { font-size: 0.9rem; }
+      .api-image-card { width: 45%; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Public APIs - หมวดสัตว์ (Animals) </h1>
+  <button onclick="showAnimals()">แสดงข้อมูล APIs(Animals) </button>
+  <button onclick="showImages()">แสดงรูปภาพของ APIs(Animals)</button>
+
+  <div id="api-table"></div>
+
+  <div id="chart-container" style="display:none;">
+    <h2 style="text-align:center;">แสดงข้อมูลกราฟ</h2>
+    <canvas id="authChart" height="120" style="max-width:560px; margin:0 auto; display:block;"></canvas>
+  </div>
+
+  <div id="image-container"></div>
+</div>
+
+<script>
+const animalsApiData = [
+  { API: 'AdoptAPet', Description: 'Resource to help get pets adopted', Auth: 'apiKey', HTTPS: true, CORS: true, imageUrl: 'https://place-puppy.com/120x90' },
+  { API: 'Axolotl', Description: 'Collection of axolotl pictures and facts', Auth: 'No', HTTPS: true, CORS: false, imageUrl: 'https://picsum.photos/id/1011/120/90' },
+  { API: 'Cat Facts', Description: 'Daily cat facts', Auth: 'No', HTTPS: true, CORS: false, imageUrl: 'https://placekitten.com/120/90' },
+  { API: 'Cataas', Description: 'Cat as a service (cats pictures and gifs)', Auth: 'No', HTTPS: true, CORS: false, imageUrl: 'https://cataas.com/cat/says/Hello?size=50&color=white' },
+  { API: 'Cats', Description: 'Pictures of cats from Tumblr', Auth: 'apiKey', HTTPS: true, CORS: false, imageUrl: 'https://placekitten.com/121/90' },
+  { API: 'Dog Facts', Description: 'Random dog facts', Auth: 'No', HTTPS: true, CORS: true, imageUrl: 'https://placedog.net/120/90' },
+  { API: 'Dogs', Description: 'Based on the Stanford Dogs Dataset', Auth: 'No', HTTPS: true, CORS: true, imageUrl: 'https://placedog.net/121/90' },
+  { API: 'PlaceBear', Description: 'Placeholder bear pictures', Auth: 'No', HTTPS: true, CORS: true, imageUrl: 'https://placebear.com/120/90' },
+  { API: 'PlaceDog', Description: 'Placeholder Dog pictures', Auth: 'No', HTTPS: true, CORS: true, imageUrl: 'https://placedog.net/122/90' },
+  { API: 'PlaceKitten', Description: 'Placeholder Kitten pictures', Auth: 'No', HTTPS: true, CORS: true, imageUrl: 'https://placekitten.com/122/90' },
+  { API: 'RandomDog', Description: 'Random pictures of dogs', Auth: 'No', HTTPS: true, CORS: true, imageUrl: 'https://placedog.net/123/90' },
+  { API: 'RandomDuck', Description: 'Random pictures of ducks', Auth: 'No', HTTPS: true, CORS: false, imageUrl: 'https://random-d.uk/api/randomimg' },
+  { API: 'RandomFox', Description: 'Random pictures of foxes', Auth: 'No', HTTPS: true, CORS: false, imageUrl: 'https://randomfox.ca/images/1.jpg' },
+  { API: 'Shibe.Online', Description: 'Random pictures of Shiba Inu, cats or birds', Auth: 'No', HTTPS: true, CORS: true, imageUrl: 'https://shibe.online/shibes/hello.jpg' },
+  { API: 'Zoo Animals', Description: 'Facts and pictures of zoo animals', Auth: 'No', HTTPS: true, CORS: true, imageUrl: 'https://placeimg.com/120/90/animals' }
+];
+
+function showAnimals() {
+  // ตาราง API
+  let table =
+    `<table>
+    <thead>
+      <tr>
+        <th>API</th>
+        <th>คำอธิบาย</th>
+        <th>Auth</th>
+        <th>HTTPS</th>
+        <th>CORS</th>
+      </tr>
+    </thead>
+    <tbody>` +
+    animalsApiData.map(a =>
+      `<tr>
+        <td><b>${a.API}</b></td>
+        <td>${a.Description}</td>
+        <td>${a.Auth}</td>
+        <td>${a.HTTPS ? '✔️' : '❌'}</td>
+        <td>${a.CORS === true ? '✔️' : a.CORS === false ? '❌' : 'Unknown'}</td>
+      </tr>`
+    ).join('') +
+    `</tbody></table>`;
+
+  document.getElementById('api-table').innerHTML = table;
+  document.getElementById('chart-container').style.display = 'block';
+  document.getElementById('image-container').innerHTML = '';
+  drawChart();
+}
+
+function drawChart() {
+  const authTypes = _.countBy(animalsApiData, a => (a.Auth === 'No' || a.Auth === '' ? 'None' : a.Auth));
+  const labels = Object.keys(authTypes);
+  const counts = Object.values(authTypes);
+
+  if (window.myChart) window.myChart.destroy();
+  const ctx = document.getElementById('authChart').getContext('2d');
+  window.myChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: counts,
+        backgroundColor: ['#2980ef', '#28c076', '#f9b80f', '#fa5252', '#a17ee5'],
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true, position: 'bottom' }
+      }
+    }
+  });
+}
+
+function showImages() {
+  const container = document.getElementById('image-container');
+  container.innerHTML = '';
+
+  animalsApiData.forEach(api => {
+    if (!api.imageUrl) return;  // รูปไม่มีก็ข้าม
+
+    const card = document.createElement('div');
+    card.className = 'api-image-card';
+    card.title = api.API + ': ' + api.Description;
+
+    card.innerHTML = `
+      <img src="${api.imageUrl}" alt="${api.API} รูปภาพ API สัตว์" loading="lazy" />
+      <div>${api.API}</div>
+    `;
+
+    container.appendChild(card);
+  });
+
+  document.getElementById('chart-container').style.display = 'none';
+  document.getElementById('api-table').innerHTML = '';
+}
+</script>
+</body>
+</html>
